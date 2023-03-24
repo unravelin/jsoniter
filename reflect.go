@@ -212,11 +212,11 @@ type onePtrEncoder struct {
 }
 
 func (encoder *onePtrEncoder) IsEmpty(ptr unsafe.Pointer) bool {
-	return encoder.encoder.IsEmpty(unsafe.Pointer(&ptr))
+	return encoder.encoder.IsEmpty(reflect2.NoEscape(unsafe.Pointer(&ptr)))
 }
 
 func (encoder *onePtrEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
-	encoder.encoder.Encode(unsafe.Pointer(&ptr), stream)
+	encoder.encoder.Encode(reflect2.NoEscape(unsafe.Pointer(&ptr)), stream)
 }
 
 func encoderOfType(ctx *ctx, typ reflect2.Type) ValEncoder {
@@ -246,6 +246,7 @@ func createEncoderOfType(ctx *ctx, typ reflect2.Type) ValEncoder {
 	placeholder.encoder = encoder
 	return encoder
 }
+
 func _createEncoderOfType(ctx *ctx, typ reflect2.Type) ValEncoder {
 	encoder := createEncoderOfJsonRawMessage(ctx, typ)
 	if encoder != nil {

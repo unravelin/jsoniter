@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"io"
 	"reflect"
-	"sort"
 	"unsafe"
 
 	"github.com/modern-go/reflect2"
+	"golang.org/x/exp/slices"
 )
 
 func decoderOfMap(ctx *ctx, typ reflect2.Type) ValDecoder {
@@ -291,11 +291,16 @@ func (encoder *sortKeysMapEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
 		return
 	}
 	stream.WriteObjectStart()
+	mif := encoder.mapType.PackEFace(ptr)
+	l := reflect.ValueOf(mif).Elem().Len()
+
 	mapIter := encoder.mapType.UnsafeIterate(ptr)
 	subStream := stream.cfg.BorrowStream(nil)
 	subStream.Attachment = stream.Attachment
 	subIter := stream.cfg.BorrowIterator(nil)
-	keyValues := encodedKeyValues{}
+	keyValues := make(encodedKeyValues, 0, l)
+	keyIsString := encoder.mapType.Key().Kind() == reflect.String
+
 	for mapIter.HasNext() {
 		key, elem := mapIter.UnsafeNext()
 		subStreamIndex := subStream.Buffered()
@@ -304,8 +309,15 @@ func (encoder *sortKeysMapEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
 			stream.Error = subStream.Error
 		}
 		encodedKey := subStream.Buffer()[subStreamIndex:]
-		subIter.ResetBytes(encodedKey)
-		decodedKey := subIter.ReadString()
+
+		var decodedKey string
+		if keyIsString {
+			decodedKey = *(*string)(key)
+		} else {
+			subIter.ResetBytes(encodedKey)
+			decodedKey = subIter.ReadString()
+		}
+
 		if stream.indention > 0 {
 			subStream.writeTwoBytes(byte(':'), byte(' '))
 		} else {
@@ -317,7 +329,7 @@ func (encoder *sortKeysMapEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
 			keyValue: subStream.Buffer()[subStreamIndex:],
 		})
 	}
-	sort.Sort(keyValues)
+	slices.SortFunc(keyValues, func(a, b encodedKV) bool { return a.key < b.key })
 	for i, keyValue := range keyValues {
 		if i != 0 {
 			stream.WriteMore()
@@ -343,7 +355,3 @@ type encodedKV struct {
 	key      string
 	keyValue []byte
 }
-
-func (sv encodedKeyValues) Len() int           { return len(sv) }
-func (sv encodedKeyValues) Swap(i, j int)      { sv[i], sv[j] = sv[j], sv[i] }
-func (sv encodedKeyValues) Less(i, j int) bool { return sv[i].key < sv[j].key }
