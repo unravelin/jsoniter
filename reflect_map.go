@@ -156,7 +156,6 @@ func (decoder *mapDecoder) Decode(ptr unsafe.Pointer, iter *Iterator) {
 	if c == 'n' {
 		iter.skipThreeBytes('u', 'l', 'l')
 		*(*unsafe.Pointer)(ptr) = nil
-		mapType.UnsafeSet(ptr, mapType.UnsafeNew())
 		return
 	}
 	if mapType.UnsafeIsNil(ptr) {

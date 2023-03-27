@@ -406,11 +406,13 @@ func (codec *base64Codec) Decode(ptr unsafe.Pointer, iter *Iterator) {
 	}
 	switch iter.WhatIsNext() {
 	case StringValue:
-		src := iter.ReadString()
-		dst, err := base64.StdEncoding.DecodeString(src)
+		src := iter.PeekString()
+		dst := make([]byte, base64.StdEncoding.DecodedLen(len(src)))
+		n, err := base64.StdEncoding.Decode(dst, src)
 		if err != nil {
 			iter.ReportError("decode base64", err.Error())
 		} else {
+			dst = dst[:n]
 			codec.sliceType.UnsafeSet(ptr, unsafe.Pointer(&dst))
 		}
 	case ArrayValue:

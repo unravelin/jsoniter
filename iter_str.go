@@ -5,14 +5,18 @@ import (
 	"unicode/utf16"
 )
 
+func (iter *Iterator) ReadString() string {
+	return string(iter.PeekString())
+}
+
 // ReadString read string from iterator
-func (iter *Iterator) ReadString() (ret string) {
+func (iter *Iterator) PeekString() []byte {
 	c := iter.nextToken()
 	if c == '"' {
 		for i := iter.head; i < iter.tail; i++ {
 			c := iter.buf[i]
 			if c == '"' {
-				ret = string(iter.buf[iter.head:i])
+				ret := iter.buf[iter.head:i]
 				iter.head = i + 1
 				return ret
 			} else if c == '\\' {
@@ -20,25 +24,25 @@ func (iter *Iterator) ReadString() (ret string) {
 			} else if c < ' ' {
 				iter.ReportError("ReadString",
 					fmt.Sprintf(`invalid control character found: %d`, c))
-				return
+				return nil
 			}
 		}
 		return iter.readStringSlowPath()
 	} else if c == 'n' {
 		iter.skipThreeBytes('u', 'l', 'l')
-		return ""
+		return nil
 	}
 	iter.ReportError("ReadString", `expects " or n, but found `+string([]byte{c}))
-	return
+	return nil
 }
 
-func (iter *Iterator) readStringSlowPath() (ret string) {
+func (iter *Iterator) readStringSlowPath() []byte {
 	var str []byte
 	var c byte
 	for iter.Error == nil {
 		c = iter.readByte()
 		if c == '"' {
-			return string(str)
+			return str
 		}
 		if c == '\\' {
 			c = iter.readByte()
@@ -48,7 +52,7 @@ func (iter *Iterator) readStringSlowPath() (ret string) {
 		}
 	}
 	iter.ReportError("readStringSlowPath", "unexpected end of input")
-	return
+	return nil
 }
 
 func (iter *Iterator) readEscapedChar(c byte, str []byte) []byte {

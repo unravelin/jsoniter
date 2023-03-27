@@ -2,7 +2,7 @@ module github.com/json-iterator/go
 
 go 1.20
 
-replace github.com/modern-go/reflect2 => github.com/unravelin/reflect2 v1.0.3
+replace github.com/modern-go/reflect2 => github.com/unravelin/reflect2 v1.0.4
 
 require (
 	github.com/davecgh/go-spew v1.1.1
