@@ -1,13 +1,14 @@
 package jsoniter
 
 import (
+	"cmp"
 	"fmt"
 	"io"
 	"reflect"
+	"slices"
 	"unsafe"
 
 	"github.com/modern-go/reflect2"
-	"golang.org/x/exp/slices"
 )
 
 func decoderOfMap(ctx *ctx, typ reflect2.Type) ValDecoder {
@@ -328,7 +329,7 @@ func (encoder *sortKeysMapEncoder) Encode(ptr unsafe.Pointer, stream *Stream) {
 			keyValue: subStream.Buffer()[subStreamIndex:],
 		})
 	}
-	slices.SortFunc(keyValues, func(a, b encodedKV) bool { return a.key < b.key })
+	slices.SortFunc(keyValues, func(a, b encodedKV) int { return cmp.Compare(a.key, b.key) })
 	for i, keyValue := range keyValues {
 		if i != 0 {
 			stream.WriteMore()
