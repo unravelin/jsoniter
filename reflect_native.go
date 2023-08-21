@@ -3,11 +3,11 @@ package jsoniter
 import (
 	"encoding/base64"
 	"reflect"
+	"slices"
 	"strconv"
 	"unsafe"
 
 	"github.com/modern-go/reflect2"
-	"golang.org/x/exp/slices"
 )
 
 const ptrSize = 32 << uintptr(^uintptr(0)>>63)
